@@ -1,22 +1,23 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import SensorCard from './components/SensorCard' // Adjust this path if your folder structure is different
 import './Dashboard.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 function Dashboard() {
-  // 1. Matched state to the exact JSON from the ESP32/FastAPI
   const [sensorData, setSensorData] = useState({
-    distance: 0,
-    tds: 0,
-    orp: 0,
-    ammonia: 0,
+    distance: 15.2,
+    tds: 145,
+    orp: 1650,
+    ammonia: 800,
     ir_triggered: false,
-    weight: 0,
+    weight: 85.5,
     auto_mode: true,
-    timestamp: new Date()
   })
 
-  // 2. Alerts matching the FastAPI backend alert dictionary
+  const [lastUpdated, setLastUpdated] = useState(new Date())
+  const [connectionStatus, setConnectionStatus] = useState('offline')
+
   const [alerts, setAlerts] = useState({
     tds_alert: false,
     orp_alert: false,
@@ -25,42 +26,43 @@ function Dashboard() {
     feed_empty_alert: false
   })
 
-  // 3. Hardware thresholds perfectly synced with your ESP32
+  const prevDataRef = useRef()
+
   const THRESHOLDS = {
-    AMMONIA_ALERT: 1500,     // Raw ADC
-    MIN_ORP: 1500.0,         // mV
-    MAX_TDS: 200.0,          // ppm
-    CRITICAL_LOW_WATER: 18.0,// Distance in cm
-    FEED_EMPTY_WARNING: 50.0 // Grams
+    AMMONIA_ALERT: 1500,
+    MIN_ORP: 1500.0,
+    MAX_TDS: 200.0,
+    CRITICAL_LOW_WATER: 18.0,
+    FEED_EMPTY_WARNING: 50.0
   }
 
-  // 4. Connect to FastAPI Server on the Pi 5
   useEffect(() => {
     const fetchLiveStats = async () => {
       try {
         const response = await fetch(`${API_URL}/current-reading`)
         if (response.ok) {
           const data = await response.json();
+          const newDataString = JSON.stringify(data.reading);
           
-          setSensorData({
-            ...data.reading,
-            timestamp: new Date()
-          });
+          if (newDataString !== prevDataRef.current) {
+            setSensorData(data.reading);
+            setAlerts(data.alerts);
+            setLastUpdated(new Date());
+            prevDataRef.current = newDataString; 
+          }
           
-          // Let the Python backend handle the alert math!
-          setAlerts(data.alerts);
+          setConnectionStatus('online');
         }
       } catch (error) {
-        console.error("Waiting for backend connection...");
+        setConnectionStatus('offline');
       }
     };
 
     fetchLiveStats();
-    const interval = setInterval(fetchLiveStats, 1000);
+    const interval = setInterval(fetchLiveStats, 3000); 
     return () => clearInterval(interval);
   }, []);
 
-  // 5. Control Panel Functions (Sends POST to FastAPI)
   const sendCommand = async (cmd) => {
     try {
       await fetch(`${API_URL}/command/${cmd}`, { method: 'POST' });
@@ -78,21 +80,24 @@ function Dashboard() {
     }
   }
 
-  const getStatusClass = (isAlert) => isAlert ? 'alert' : 'optimal';
-  const getStatusText = (isAlert) => isAlert ? 'ALERT' : 'Optimal';
-
   return (
     <div className="dashboard">
       <header className="dashboard-header">
         <h1>🦞 Aqua-Trace: Single-Tank Monitoring System</h1>
         <p className="subtitle">Live telemetry with manual actuator overrides</p>
-        <p className="timestamp">Last updated: {sensorData.timestamp.toLocaleTimeString()}</p>
+        
+        <p className="timestamp">
+          Last updated: {lastUpdated.toLocaleTimeString()} |{' '}
+          <span style={{ color: connectionStatus === 'online' ? '#4ade80' : '#f87171' }}>
+            {connectionStatus === 'online' ? '🟢 Live Data' : '🔴 Placeholder Data (Offline)'}
+          </span>
+        </p>
+        
         <div className="mode-indicator">
             System Mode: <strong>{sensorData.auto_mode ? "AUTOMATIC" : "MANUAL OVERRIDE"}</strong>
         </div>
       </header>
 
-      {/* --- CONTROL PANEL --- */}
       <div className="control-panel">
         <h3>System Controls</h3>
         <div className="button-group">
@@ -113,7 +118,6 @@ function Dashboard() {
           </button>
         </div>
 
-        {/* Manual Overrides only show when Auto Mode is OFF */}
         {!sensorData.auto_mode && (
             <div className="manual-overrides">
               <div className="override-group">
@@ -136,117 +140,69 @@ function Dashboard() {
         )}
       </div>
 
+      {/* Notice how clean this grid is now! */}
       <div className="sensors-grid">
-        {/* TDS Level Card */}
-        <div className={`sensor-card ${getStatusClass(alerts.tds_alert)}`}>
-          <div className="sensor-icon">💧</div>
-          <h2>TDS Level</h2>
-          <div className="sensor-value">
-            <span className="value">{sensorData.tds.toFixed(0)}</span>
-            <span className="unit">ppm</span>
-          </div>
-          <div className={`sensor-status ${getStatusClass(alerts.tds_alert)}`}>
-            {getStatusText(alerts.tds_alert)}
-          </div>
-          <div className="threshold-info">
-            Max Threshold: {THRESHOLDS.MAX_TDS} ppm
-          </div>
-          {alerts.tds_alert && (
-            <div className="alert-message">🚨 TDS HIGH! Pump activating.</div>
-          )}
-        </div>
+        <SensorCard 
+          title="TDS Level"
+          icon="💧"
+          value={sensorData.tds}
+          unit="ppm"
+          isAlert={alerts.tds_alert}
+          threshold={`${THRESHOLDS.MAX_TDS} ppm (Max)`}
+          alertMessage="🚨 TDS HIGH! Pump activating."
+        />
 
-        {/* ORP Level Card */}
-        <div className={`sensor-card ${getStatusClass(alerts.orp_alert)}`}>
-          <div className="sensor-icon">⚗️</div>
-          <h2>ORP Level</h2>
-          <div className="sensor-value">
-            <span className="value">{sensorData.orp.toFixed(0)}</span>
-            <span className="unit">mV</span>
-          </div>
-          <div className={`sensor-status ${getStatusClass(alerts.orp_alert)}`}>
-            {getStatusText(alerts.orp_alert)}
-          </div>
-          <div className="threshold-info">
-            Min Safe: {THRESHOLDS.MIN_ORP} mV
-          </div>
-          {alerts.orp_alert && (
-            <div className="alert-message">🔴 LOW WATER QUALITY! UV Activating.</div>
-          )}
-        </div>
+        <SensorCard 
+          title="ORP Level"
+          icon="⚗️"
+          value={sensorData.orp}
+          unit="mV"
+          isAlert={alerts.orp_alert}
+          threshold={`${THRESHOLDS.MIN_ORP} mV (Min Safe)`}
+          alertMessage="🔴 LOW WATER QUALITY! UV Activating."
+        />
 
-        {/* Ammonia Gas Card */}
-        <div className={`sensor-card ${getStatusClass(alerts.ammonia_alert)}`}>
-          <div className="sensor-icon">☠️</div>
-          <h2>Ammonia Gas</h2>
-          <div className="sensor-value">
-            <span className="value">{sensorData.ammonia}</span>
-            <span className="unit">Raw ADC</span>
-          </div>
-          <div className={`sensor-status ${getStatusClass(alerts.ammonia_alert)}`}>
-            {getStatusText(alerts.ammonia_alert)}
-          </div>
-          <div className="threshold-info">
-            Max Threshold: {THRESHOLDS.AMMONIA_ALERT}
-          </div>
-          {alerts.ammonia_alert && (
-            <div className="alert-message">🔴 CRITICAL: GSM sending SMS warning!</div>
-          )}
-        </div>
+        <SensorCard 
+          title="Ammonia Gas"
+          icon="☠️"
+          value={sensorData.ammonia}
+          unit="Raw ADC"
+          isAlert={alerts.ammonia_alert}
+          threshold={`${THRESHOLDS.AMMONIA_ALERT} (Max)`}
+          alertMessage="🔴 CRITICAL: GSM sending SMS warning!"
+        />
 
-        {/* Water Level (Distance) Card */}
-        <div className={`sensor-card ${getStatusClass(alerts.water_level_low)}`}>
-          <div className="sensor-icon">📏</div>
-          <h2>Water Distance</h2>
-          <div className="sensor-value">
-            <span className="value">{sensorData.distance.toFixed(1)}</span>
-            <span className="unit">cm</span>
-          </div>
-          <div className={`sensor-status ${getStatusClass(alerts.water_level_low)}`}>
-            {getStatusText(alerts.water_level_low)}
-          </div>
-          <div className="threshold-info">
-            Max Drop: {THRESHOLDS.CRITICAL_LOW_WATER} cm
-          </div>
-          {alerts.water_level_low && (
-            <div className="alert-message">🔴 WATER LOW! Solenoid opening.</div>
-          )}
-        </div>
+        <SensorCard 
+          title="Water Distance"
+          icon="📏"
+          value={sensorData.distance}
+          unit="cm"
+          isAlert={alerts.water_level_low}
+          threshold={`${THRESHOLDS.CRITICAL_LOW_WATER} cm (Max Drop)`}
+          alertMessage="🔴 WATER LOW! Solenoid opening."
+        />
 
-        {/* Feed Hopper Weight Card */}
-        <div className={`sensor-card ${getStatusClass(alerts.feed_empty_alert)}`}>
-          <div className="sensor-icon">⚖️</div>
-          <h2>Hopper Weight</h2>
-          <div className="sensor-value">
-            <span className="value">{sensorData.weight.toFixed(1)}</span>
-            <span className="unit">g</span>
-          </div>
-          <div className={`sensor-status ${getStatusClass(alerts.feed_empty_alert)}`}>
-            {getStatusText(alerts.feed_empty_alert)}
-          </div>
-          <div className="threshold-info">
-            Refill at: {THRESHOLDS.FEED_EMPTY_WARNING} g
-          </div>
-          {alerts.feed_empty_alert && (
-            <div className="alert-message">⚠️ HOPPER EMPTY! Please refill.</div>
-          )}
-        </div>
+        <SensorCard 
+          title="Hopper Weight"
+          icon="⚖️"
+          value={sensorData.weight}
+          unit="g"
+          isAlert={alerts.feed_empty_alert}
+          threshold={`${THRESHOLDS.FEED_EMPTY_WARNING} g (Refill at)`}
+          alertMessage="⚠️ HOPPER EMPTY! Please refill."
+        />
 
-        {/* IR Hide Status Card */}
-        <div className="sensor-card optimal">
-          <div className="sensor-icon">🦞</div>
-          <h2>Hide Status (IR)</h2>
-          <div className="sensor-value" style={{ fontSize: '1.5rem', marginTop: '15px' }}>
-            <span className="value">{sensorData.ir_triggered ? "Occupied" : "Clear"}</span>
-          </div>
-          <div className="sensor-status optimal">
-            {sensorData.ir_triggered ? "Winch Ready to Lift" : "Monitoring"}
-          </div>
-        </div>
-
+        <SensorCard 
+          title="Hide Status (IR)"
+          icon="🦞"
+          value={sensorData.ir_triggered ? "Occupied" : "Clear"}
+          unit=""
+          isAlert={false}
+          threshold={sensorData.ir_triggered ? "Winch Ready to Lift" : "Monitoring"}
+          alertMessage=""
+        />
       </div>
 
-      {/* Alert Summary */}
       <div className="alert-summary">
         <h3>⚡ Active Alerts</h3>
         <div className="alerts-list">
@@ -267,4 +223,4 @@ function Dashboard() {
   )
 }
 
-export default Dashboard
+export default Dashboard;

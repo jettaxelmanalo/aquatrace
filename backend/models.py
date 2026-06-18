@@ -3,30 +3,6 @@ from datetime import datetime
 from typing import Optional, Union
 
 class SensorReading(BaseModel):
-    """Schema for the incoming MQTT sensor readings from the ESP32"""
-    distance: float      # Ultrasonic distance (cm)
-    tds: float           # Total Dissolved Solids (ppm)
-    orp: float           # Oxidation-Reduction Potential (mV)
-    ammonia: int         # Raw Ammonia ADC value (0-4095)
-    ir_triggered: bool   # True if crayfish is detected in the hide
-    weight: float        # Simulated/Real load cell weight (g)
-    auto_mode: bool      # True if system is managing itself automatically
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "distance": 14.5,
-                "tds": 150.5,
-                "orp": 1600.0,
-                "ammonia": 1200,
-                "ir_triggered": False,
-                "weight": 100.0,
-                "auto_mode": True
-            }
-        }
-
-class SensorReadingResponse(BaseModel):
-    """Response model for sensor readings sent to the React frontend"""
     distance: float
     tds: float
     orp: float
@@ -34,24 +10,42 @@ class SensorReadingResponse(BaseModel):
     ir_triggered: bool
     weight: float
     auto_mode: bool
-    
-    # Server-generated timestamps
+    pump_on: bool         
+    uv_on: bool           
+    solenoid_on: bool     
+    is_feeding: bool      
+    winch_angle: int   # Changed from winch_on: bool to winch_angle: int
+    sms_sent: bool
+
+class SensorReadingResponse(BaseModel):
+    distance: float
+    tds: float
+    orp: float
+    ammonia: int
+    ir_triggered: bool
+    weight: float
+    auto_mode: bool
+    pump_on: bool
+    uv_on: bool
+    solenoid_on: bool
+    is_feeding: bool
+    winch_angle: int   # Changed here as well
+    sms_sent: bool
     server_timestamp: Optional[str] = None
     timestamp: Optional[datetime] = None
-
+    
 class AlertStatus(BaseModel):
     """Alert status model used to trigger UI warnings"""
     tds_alert: bool
     orp_alert: bool
     ammonia_alert: bool
     water_level_low: bool
-    feed_empty_alert: bool  # Triggers when weight drops below threshold
+    feed_empty_alert: bool
     
-    # Allows either a string (ISO format) or a datetime object
     timestamp: Union[str, datetime] 
 
 class DashboardData(BaseModel):
     """Combined system data for the main dashboard view"""
-    current_reading: SensorReading
+    reading: SensorReadingResponse # Changed from 'current_reading' to 'reading' to match your API
     alerts: AlertStatus
-    system_status: str  # "online" or "offline"
+    status: str  # "online" or "waiting_for_hardware"

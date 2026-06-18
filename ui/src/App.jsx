@@ -11,12 +11,12 @@ import './App.css'
 
 const TEAM_MEMBERS = [
   { id: 'master', name: 'Master Control', icon: '🎛️', color: '#667eea' },
-  { id: 'jett', name: 'Jett', icon: '🦞', color: '#667eea' },
-  { id: 'edilyn', name: 'Edilyn', icon: '🦞', color: '#ff6b6b' },
-  { id: 'emma', name: 'Emma', icon: '🦞', color: '#4ecdc4' },
-  { id: 'maria', name: 'Maria', icon: '🦞', color: '#f39c12' },
-  { id: 'deci', name: 'Deci', icon: '🦞', color: '#e74c3c' },
-  { id: 'cyleen', name: 'Cyleen', icon: '🦞', color: '#9b59b6' },
+  { id: 'jett', name: 'Manalo', icon: '🦞', color: '#667eea' },
+  { id: 'edilyn', name: 'Mallo', icon: '🦞', color: '#ff6b6b' },
+  { id: 'emma', name: 'Pascua', icon: '🦞', color: '#4ecdc4' },
+  { id: 'maria', name: 'Labi-labi', icon: '🦞', color: '#f39c12' },
+  { id: 'deci', name: 'Tanora', icon: '🦞', color: '#e74c3c' },
+  { id: 'cyleen', name: 'Buenviaje', icon: '🦞', color: '#9b59b6' },
 ]
 
 function App() {

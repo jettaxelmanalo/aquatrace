@@ -11,7 +11,6 @@ export const useSensorData = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true)
         const readingRes = await fetch(`${API_URL}/current-reading`)
         const alertsRes = await fetch(`${API_URL}/alerts`)
 
@@ -23,7 +22,7 @@ export const useSensorData = () => {
         const alertsData = await alertsRes.json()
 
         setData(readingData.reading)
-        setAlerts(alertsData)
+        setAlerts(alertsData) 
         setError(null)
       } catch (err) {
         setError(err.message)

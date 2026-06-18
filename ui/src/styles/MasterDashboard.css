@@ -1,9 +1,11 @@
 /* ==================================================================
-   AQUA-TRACE — full-bleed monochrome instrument panel
-   One neutral scale + one alert color, used only when it matters.
-   #0a0a0a void · #141414 panel · #1f1f1f panel-raised · #2b2b2b line
+   AQUA-TRACE — MASTER CONTROL PANEL
+   Distinct from the single-tank view: this is the dense operator
+   console, so structure leads with controls (left rail) rather than
+   readouts. Same monochrome instrument language, different skeleton.
+
+   #0a0a0a void · #141414 panel · #1f1f1f raised · #2b2b2b line
    #707070 dim · #b0b0b0 mid · #f2f2f2 bright · #e0473e alert (only)
-   Font: 'JetBrains Mono' everywhere — this is a readout, not a brochure.
    ================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
@@ -23,29 +25,45 @@ html, body, #root {
   background: #0a0a0a;
   color: #f2f2f2;
   font-family: 'JetBrains Mono', monospace;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "header header"
+    "rail   grid"
+    "rail   summary";
 }
 
-/* ---------- header bar ---------- */
+@media (max-width: 900px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "rail"
+      "grid"
+      "summary";
+  }
+}
+
+/* ---------- header ---------- */
 
 .dashboard-header {
+  grid-area: header;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 14px;
-  padding: 22px 32px;
+  padding: 18px 28px;
   border-bottom: 1px solid #2b2b2b;
   animation: riseIn 0.4s ease-out;
 }
 
 .dashboard-header h1 {
-  font-size: 1.15em;
+  font-size: 1.05em;
   font-weight: 700;
   margin: 0;
   letter-spacing: 0.5px;
-  color: #f2f2f2;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -56,39 +74,32 @@ html, body, #root {
   width: 8px;
   height: 8px;
   background: #f2f2f2;
-  display: inline-block;
 }
 
-.dashboard-header .subtitle {
-  font-size: 0.72em;
+.dashboard-header .subtitle,
+.dashboard-header .timestamp {
+  font-size: 0.7em;
   color: #707070;
   margin: 0;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
-  padding-left: 18px;
-  border-left: 1px solid #2b2b2b;
 }
 
-.dashboard-header .heading-row {
+.dashboard-header .meta {
   display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.timestamp {
-  font-size: 0.72em;
-  color: #707070;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-end;
+  text-align: right;
 }
 
 .mode-indicator {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 14px;
+  padding: 6px 13px;
   border: 1px solid #2b2b2b;
-  font-size: 0.72em;
+  font-size: 0.7em;
   font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -99,50 +110,61 @@ html, body, #root {
   color: #f2f2f2;
 }
 
-/* ---------- control panel ---------- */
+/* ---------- left rail: command console ---------- */
 
 .control-panel {
-  padding: 20px 32px;
-  border-bottom: 1px solid #2b2b2b;
-  animation: riseIn 0.4s ease-out 0.05s backwards;
+  grid-area: rail;
+  border-right: 1px solid #2b2b2b;
+  padding: 22px 22px 28px;
+  overflow-y: auto;
+  animation: riseIn 0.4s ease-out 0.04s backwards;
 }
 
-.control-panel h3,
-.override-group h4 {
-  margin: 0 0 12px 0;
-  font-size: 0.68em;
+@media (max-width: 900px) {
+  .control-panel {
+    border-right: none;
+    border-bottom: 1px solid #2b2b2b;
+  }
+}
+
+.control-panel h3 {
+  margin: 0 0 16px 0;
+  font-size: 0.66em;
   font-weight: 600;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: #707070;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2b2b2b;
 }
 
-.button-group,
-.override-group {
+/* commands stack vertically as a rail, not a wrapped row */
+.button-group {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.control-panel button,
-.override-group button {
+.control-panel button {
+  width: 100%;
+  text-align: left;
   border: 1px solid #2b2b2b;
   background: transparent;
   color: #b0b0b0;
-  padding: 9px 16px;
+  padding: 11px 14px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.76em;
   font-weight: 600;
   letter-spacing: 0.4px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease, padding-left 0.15s ease;
 }
 
-.control-panel button:hover,
-.override-group button:hover {
+.control-panel button:hover {
   border-color: #f2f2f2;
   color: #f2f2f2;
+  padding-left: 18px;
 }
 
 .btn-active {
@@ -155,6 +177,7 @@ html, body, #root {
   background: #d8d8d8;
   border-color: #d8d8d8;
   color: #0a0a0a;
+  padding-left: 14px;
 }
 
 .btn-inactive {
@@ -164,38 +187,33 @@ html, body, #root {
 .btn-feed {
   border-color: #f2f2f2;
   color: #f2f2f2;
+  margin-top: 10px;
 }
 
-.alert-btn {
-  border-color: #e0473e;
-  color: #e0473e;
+.btn-feed::before {
+  content: '▸ ';
 }
 
-.alert-btn:hover {
-  border-color: #e0473e;
-  color: #ff7a72;
+/* visual grouping: insert breathing room before relay/feeder blocks
+   by targeting buttons that follow the two mode buttons */
+.button-group button:nth-child(3) {
+  margin-top: 14px;
 }
 
-.manual-overrides {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #2b2b2b;
+.button-group button:nth-child(9) {
+  margin-top: 14px;
 }
 
-.override-group + .override-group {
-  margin-top: 12px;
-}
-
-/* ---------- sensor grid : fills the screen ---------- */
+/* ---------- sensor grid ---------- */
 
 .sensors-grid {
-  flex: 1;
+  grid-area: grid;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(2, 1fr);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .sensors-grid {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(3, 1fr);
@@ -212,21 +230,21 @@ html, body, #root {
 .sensor-card {
   border-right: 1px solid #2b2b2b;
   border-bottom: 1px solid #2b2b2b;
-  padding: 28px 32px;
+  padding: 26px 28px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
   transition: background 0.2s ease;
   animation: riseIn 0.4s ease-out backwards;
-  min-height: 220px;
+  min-height: 210px;
 }
 
 .sensor-card:nth-of-type(3n) {
   border-right: none;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .sensor-card:nth-of-type(2n) {
     border-right: none;
   }
@@ -256,23 +274,27 @@ html, body, #root {
   background: #150d0c;
 }
 
-.sensor-card .card-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-
 .sensor-icon {
   display: none;
 }
 
 .sensor-card h2 {
-  margin: 0;
-  font-size: 0.74em;
-  font-weight: 600;
+  margin: 0 0 10px 0;        /* Added bottom margin to give the title room to breathe */
+  font-size: 0.9em;          /* Increased size from 0.72em */
+  font-weight: 700;          /* Made the text bolder */
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #707070;
+  color: #f2f2f2;            /* Changed from dim gray to bright white */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Optional: Adds a hardware-style square bullet point next to the name to draw the eye */
+.sensor-card h2::before {
+  content: '■';
+  color: #4f4f4f;
+  font-size: 0.8em;
 }
 
 .sensor-value {
@@ -283,7 +305,7 @@ html, body, #root {
 }
 
 .value {
-  font-size: 3.2em;
+  font-size: 2.9em;
   font-weight: 700;
   color: #f2f2f2;
   letter-spacing: -1px;
@@ -296,7 +318,7 @@ html, body, #root {
 }
 
 .unit {
-  font-size: 0.8em;
+  font-size: 0.78em;
   color: #707070;
   font-weight: 500;
 }
@@ -305,11 +327,10 @@ html, body, #root {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 0.7em;
+  font-size: 0.68em;
   font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
-  margin: 0;
 }
 
 .sensor-status::before {
@@ -338,28 +359,28 @@ html, body, #root {
 }
 
 .threshold-info {
-  font-size: 0.7em;
+  font-size: 0.68em;
   color: #4f4f4f;
   letter-spacing: 0.3px;
 }
 
 .alert-message {
-  font-size: 0.74em;
+  font-size: 0.72em;
   font-weight: 500;
   color: #e0473e;
-  letter-spacing: 0.2px;
 }
 
 /* ---------- alert summary footer ---------- */
 
 .alert-summary {
-  padding: 22px 32px;
+  grid-area: summary;
+  padding: 18px 28px;
   border-top: 1px solid #2b2b2b;
 }
 
 .alert-summary h3 {
-  margin: 0 0 14px 0;
-  font-size: 0.68em;
+  margin: 0 0 12px 0;
+  font-size: 0.66em;
   font-weight: 600;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -376,9 +397,8 @@ html, body, #root {
   padding: 8px 14px;
   border: 1px solid #e0473e;
   color: #e0473e;
-  font-size: 0.78em;
+  font-size: 0.76em;
   font-weight: 500;
-  letter-spacing: 0.2px;
   animation: riseIn 0.3s ease-out;
 }
 
@@ -386,19 +406,19 @@ html, body, #root {
   padding: 8px 14px;
   border: 1px solid #2b2b2b;
   color: #b0b0b0;
-  font-size: 0.78em;
+  font-size: 0.76em;
   font-weight: 500;
-  letter-spacing: 0.2px;
 }
 
 /* ---------- loading / error ---------- */
 
 .loading,
 .error {
-  flex: 1;
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 100vh;
   font-size: 0.9em;
   color: #707070;
   letter-spacing: 0.5px;
@@ -411,14 +431,8 @@ html, body, #root {
 /* ---------- motion ---------- */
 
 @keyframes riseIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes blink {
@@ -437,23 +451,23 @@ html, body, #root {
 
 @media (max-width: 768px) {
   .dashboard-header {
-    padding: 18px 20px;
+    padding: 16px 18px;
   }
 
   .control-panel {
-    padding: 16px 20px;
+    padding: 18px 18px 22px;
   }
 
   .sensor-card {
-    padding: 22px 20px;
-    min-height: 180px;
+    padding: 20px 18px;
+    min-height: 170px;
   }
 
   .value {
-    font-size: 2.4em;
+    font-size: 2.2em;
   }
 
   .alert-summary {
-    padding: 18px 20px;
+    padding: 16px 18px;
   }
 }
