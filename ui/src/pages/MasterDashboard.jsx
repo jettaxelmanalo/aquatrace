@@ -1,11 +1,13 @@
 import { useSensorData, useThresholds } from '../hooks/useSensorData'
+import { useSensorHistory } from '../hooks/useSensorHistory'
 import SensorCard from '../components/SensorCard'
 import ActuatorStatus from '../components/ActuatorStatus'
+import SensorChart from '../components/SensorChart'
 import '../styles/MasterDashboard.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
-// Added angles to the Winch button labels for clarity
+// Manual commands including the specific servo angles for the winch
 const MANUAL_COMMANDS = [
   { label: 'Auto Mode', command: 'AUTO_MODE', kind: 'active' },
   { label: 'Manual Mode', command: 'MANUAL_MODE', kind: 'active' },
@@ -22,6 +24,7 @@ const MANUAL_COMMANDS = [
 
 function MasterDashboard() {
   const { data, alerts, loading, error } = useSensorData()
+  const historyData = useSensorHistory(40) // Fetch last 40 readings for the charts
   const thresholds = useThresholds()
 
   const sendCommand = async (cmd) => {
@@ -32,29 +35,10 @@ function MasterDashboard() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="dashboard">
-        <div className="loading">Loading sensor data...</div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="dashboard">
-        <div className="error">Error: {error}</div>
-      </div>
-    )
-  }
-
-  if (!data || !alerts) {
-    return (
-      <div className="dashboard">
-        <div className="error">No sensor data available</div>
-      </div>
-    )
-  }
+  // Handle loading and error states gracefully
+  if (loading) return <div className="dashboard"><div className="loading">Loading sensor data...</div></div>
+  if (error) return <div className="dashboard"><div className="error">Error: {error}</div></div>
+  if (!data || !alerts) return <div className="dashboard"><div className="error">No sensor data available</div></div>
 
   return (
     <div className="dashboard">
@@ -76,12 +60,10 @@ function MasterDashboard() {
             <button
               key={button.command}
               className={
-                button.kind === 'feed'
-                  ? 'btn-feed'
-                  : button.kind === 'active'
-                    ? data.auto_mode
-                      ? 'btn-active'
-                      : 'btn-inactive'
+                button.kind === 'feed' 
+                  ? 'btn-feed' 
+                  : button.kind === 'active' 
+                    ? (data.auto_mode ? 'btn-active' : 'btn-inactive') 
                     : 'btn-inactive'
               }
               onClick={() => sendCommand(button.command)}
@@ -91,8 +73,7 @@ function MasterDashboard() {
           ))}
         </div>
 
-        {/* --- ACTUATOR STATUS PANEL --- */}
-        {/* This passes the new winch_angle and sms_sent data to your status lights */}
+        {/* Live Hardware Actuator Status Panel */}
         <ActuatorStatus status={{ 
           pump_on: data.pump_on, 
           uv_on: data.uv_on, 
@@ -103,66 +84,74 @@ function MasterDashboard() {
         }} />
       </div>
 
+      {/* Primary Sensor Reading Grid */}
       <div className="sensors-grid">
-        <SensorCard
-          title="TDS Level"
-          value={data.tds}
-          unit="ppm"
-          isAlert={alerts.tds_alert}
-          alertMessage={alerts.tds_alert ? 'TDS high — water change recommended.' : null}
-          threshold={thresholds ? `${thresholds.MAX_TDS} ppm` : 'N/A'}
+        <SensorCard 
+          title="TDS Level" 
+          value={data.tds} 
+          unit="ppm" 
+          isAlert={alerts.tds_alert} 
+          alertMessage={alerts.tds_alert ? 'TDS high — water change recommended.' : null} 
+          threshold={thresholds ? `${thresholds.MAX_TDS} ppm` : 'N/A'} 
         />
-
-        <SensorCard
-          title="ORP Level"
-          value={data.orp}
-          unit="mV"
-          isAlert={alerts.orp_alert}
-          alertMessage={alerts.orp_alert ? 'Low oxygen risk — stagnant water.' : null}
-          threshold={thresholds ? `Min ${thresholds.MIN_ORP} mV` : 'N/A'}
+        <SensorCard 
+          title="ORP Level" 
+          value={data.orp} 
+          unit="mV" 
+          isAlert={alerts.orp_alert} 
+          alertMessage={alerts.orp_alert ? 'Low oxygen risk — stagnant water.' : null} 
+          threshold={thresholds ? `Min ${thresholds.MIN_ORP} mV` : 'N/A'} 
         />
-
-        <SensorCard
-          title="Ammonia Gas"
-          value={data.ammonia}
-          unit="Raw"
-          isAlert={alerts.ammonia_alert}
-          alertMessage={alerts.ammonia_alert ? 'Critical — high toxic waste detected.' : null}
-          threshold={thresholds ? `${thresholds.AMMONIA_ALERT} Limit` : 'N/A'}
+        <SensorCard 
+          title="Ammonia Gas" 
+          value={data.ammonia} 
+          unit="Raw" 
+          isAlert={alerts.ammonia_alert} 
+          alertMessage={alerts.ammonia_alert ? 'Critical — high toxic waste detected.' : null} 
+          threshold={thresholds ? `${thresholds.AMMONIA_ALERT} Limit` : 'N/A'} 
         />
-
-        <SensorCard
-          title="Water Distance"
-          value={data.distance}
-          unit="cm"
-          isAlert={alerts.water_level_low}
-          alertMessage={alerts.water_level_low ? 'Water level out of range.' : null}
-          threshold={thresholds ? `Alert below ${thresholds.CRITICAL_LOW_WATER} cm` : 'N/A'}
+        <SensorCard 
+          title="Water Distance" 
+          value={data.distance} 
+          unit="cm" 
+          isAlert={alerts.water_level_low} 
+          alertMessage={alerts.water_level_low ? 'Water level out of range.' : null} 
+          threshold={thresholds ? `Alert below ${thresholds.CRITICAL_LOW_WATER} cm` : 'N/A'} 
         />
-
-        <SensorCard
-          title="Scale Weight"
-          value={data.weight}
-          unit="g"
-          isAlert={alerts.feed_empty_alert}
-          alertMessage={alerts.feed_empty_alert ? 'Feed hopper low — refill soon.' : null}
-          threshold={thresholds ? `Refill below ${thresholds.FEED_EMPTY_WARNING} g` : 'Real-time measurement'}
+        <SensorCard 
+          title="Scale Weight" 
+          value={data.weight} 
+          unit="g" 
+          isAlert={alerts.feed_empty_alert} 
+          alertMessage={alerts.feed_empty_alert ? 'Feed hopper low — refill soon.' : null} 
+          threshold={thresholds ? `Refill below ${thresholds.FEED_EMPTY_WARNING} g` : 'Real-time measurement'} 
         />
-
-        <SensorCard
-          title="Hide Status (IR)"
-          value={data.ir_triggered ? 'Occupied' : 'Clear'}
-          unit=""
-          isAlert={false}
-          threshold={data.ir_triggered ? 'Crayfish detected in hide' : 'Hide is clear'}
+        <SensorCard 
+          title="Hide Status (IR)" 
+          value={data.ir_triggered ? 'Occupied' : 'Clear'} 
+          unit="" 
+          isAlert={false} 
+          threshold={data.ir_triggered ? 'Crayfish detected in hide' : 'Hide is clear'} 
         />
       </div>
 
+      {/* --- LIVE TELEMETRY CHARTS SECTION --- */}
+      <h3 style={{ margin: '30px 28px 10px', color: '#707070', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.8em' }}>
+        Live Telemetry Trends
+      </h3>
+      <div className="charts-grid" style={{ borderTop: '1px solid #2b2b2b', paddingTop: '20px' }}>
+        <SensorChart data={historyData} dataKey="ammonia" title="Ammonia" color="#e0473e" unit="ADC" />
+        <SensorChart data={historyData} dataKey="tds" title="TDS" color="#4ecdc4" unit="ppm" />
+        <SensorChart data={historyData} dataKey="orp" title="ORP" color="#f39c12" unit="mV" />
+        <SensorChart data={historyData} dataKey="distance" title="Water Level" color="#667eea" unit="cm" />
+        <SensorChart data={historyData} dataKey="weight" title="Hopper Weight" color="#9b59b6" unit="g" />
+      </div>
+
+      {/* Critical Active Alerts Footer */}
       <div className="alert-summary">
         <h3>Active Alerts</h3>
         <div className="alerts-list">
-          {(alerts.tds_alert || alerts.orp_alert || alerts.ammonia_alert ||
-            alerts.water_level_low || alerts.feed_empty_alert) ? (
+          {(alerts.tds_alert || alerts.orp_alert || alerts.ammonia_alert || alerts.water_level_low || alerts.feed_empty_alert) ? (
             <>
               {alerts.tds_alert && <div className="alert-item">TDS level high</div>}
               {alerts.orp_alert && <div className="alert-item">Low oxygen risk</div>}

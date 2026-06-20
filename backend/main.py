@@ -80,7 +80,7 @@ def on_message(client, userdata, msg):
         # Add server-side timestamp for the database
         data_with_timestamp = {
             **payload,
-            "server_timestamp": datetime.utcnow().isoformat()
+            "server_timestamp": datetime.utcnow().isoformat() + "Z"
         }
         
         # Save to MongoDB
@@ -89,7 +89,7 @@ def on_message(client, userdata, msg):
         # Update global state
         current_reading = payload
         
-        print(f"✓ Data saved: Dist={payload.get('distance')}cm, Amm={payload.get('ammonia')}, Wgt={payload.get('weight')}g")
+        print(f"✓ Data saved: Dist={payload.get('distance')}cm, TDS={payload.get('tds')}ppm, ORP={payload.get('orp')}mV, Amm={payload.get('ammonia')}, Wgt={payload.get('weight')}g")
         
     except json.JSONDecodeError:
         print(f"✗ Failed to decode MQTT payload: {msg.payload}")
