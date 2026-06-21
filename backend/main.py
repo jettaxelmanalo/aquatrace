@@ -41,7 +41,7 @@ MQTT_TOPIC_IN = BASE_TOPIC + "/commands"
 # ALIGNED THRESHOLDS (Matches ESP32 Code)
 # ==========================================
 THRESHOLDS = {
-    "AMMONIA_ALERT": 1500,       # Matches ESP32 raw ADC threshold
+    "AMMONIA_ALERT": 500,       # Matches ESP32 raw ADC threshold
     "MIN_ORP": 1500.0,           # Matches ESP32 ORP_THRESHOLD
     "MAX_TDS": 200.0,            # Matches ESP32 TDS_THRESHOLD
     "CRITICAL_LOW_WATER": 18.0,  # Matches ESP32 DISTANCE_THRESHOLD (in cm)
