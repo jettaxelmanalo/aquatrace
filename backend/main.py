@@ -44,8 +44,8 @@ THRESHOLDS = {
     "AMMONIA_ALERT": 500,       # Matches ESP32 raw ADC threshold
     "MIN_ORP": 1500.0,           # Matches ESP32 ORP_THRESHOLD
     "MAX_TDS": 200.0,            # Matches ESP32 TDS_THRESHOLD
-    "CRITICAL_LOW_WATER": 18.0,  # Matches ESP32 DISTANCE_THRESHOLD (in cm)
-    "FEED_EMPTY_WARNING": 50.0   # Matches ESP32 FEED_EMPTY_THRESHOLD
+    "CRITICAL_LOW_WATER": 19.0,  # Matches ESP32 DISTANCE_THRESHOLD (in cm)
+    "FEED_EMPTY_WARNING": 25.0   # Matches ESP32 FEED_EMPTY_THRESHOLD
 }
 
 # Global state
