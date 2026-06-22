@@ -8,6 +8,7 @@ import '../styles/MasterDashboard.css'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 // Manual commands including the specific servo angles for the winch
+// Add the SMS button to your existing commands array
 const MANUAL_COMMANDS = [
   { label: 'Auto Mode', command: 'AUTO_MODE', kind: 'active' },
   { label: 'Manual Mode', command: 'MANUAL_MODE', kind: 'active' },
@@ -20,6 +21,7 @@ const MANUAL_COMMANDS = [
   { label: 'Winch UP (90°)', command: 'WINCH_UP' },
   { label: 'Winch DOWN (0°)', command: 'WINCH_DOWN' },
   { label: 'Dispense Feed', command: 'STEPPER_DISPENSE', kind: 'feed' },
+  { label: 'Send Test SMS', command: 'SEND_SMS', kind: 'active' }, // NEW SMS BUTTON
 ]
 
 function MasterDashboard() {
@@ -73,13 +75,14 @@ function MasterDashboard() {
           ))}
         </div>
 
-        {/* Live Hardware Actuator Status Panel */}
+       {/* Live Hardware Actuator Status Panel */}
         <ActuatorStatus status={{ 
           pump_on: data.pump_on, 
           uv_on: data.uv_on, 
           solenoid_on: data.solenoid_on, 
           is_feeding: data.is_feeding,
-          winch_angle: data.winch_angle, 
+          winch_angle: data.winch_angle,
+          gsm_ok: data.gsm_ok,       // NEW: Pass GSM Status
           sms_sent: data.sms_sent 
         }} />
       </div>

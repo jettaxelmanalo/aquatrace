@@ -7,6 +7,7 @@ class SensorReading(BaseModel):
     tds: float
     orp: float
     ammonia: int
+    ammonia_ppm: float    # NEW: Added PPM
     ir_triggered: bool
     weight: float
     auto_mode: bool
@@ -14,7 +15,8 @@ class SensorReading(BaseModel):
     uv_on: bool           
     solenoid_on: bool     
     is_feeding: bool      
-    winch_angle: int   # Changed from winch_on: bool to winch_angle: int
+    winch_angle: int   
+    gsm_ok: bool          # NEW: Added GSM Status
     sms_sent: bool
 
 class SensorReadingResponse(BaseModel):
@@ -22,6 +24,7 @@ class SensorReadingResponse(BaseModel):
     tds: float
     orp: float
     ammonia: int
+    ammonia_ppm: float    # NEW: Added PPM
     ir_triggered: bool
     weight: float
     auto_mode: bool
@@ -29,23 +32,21 @@ class SensorReadingResponse(BaseModel):
     uv_on: bool
     solenoid_on: bool
     is_feeding: bool
-    winch_angle: int   # Changed here as well
+    winch_angle: int   
+    gsm_ok: bool          # NEW: Added GSM Status
     sms_sent: bool
     server_timestamp: Optional[str] = None
     timestamp: Optional[datetime] = None
     
 class AlertStatus(BaseModel):
-    """Alert status model used to trigger UI warnings"""
     tds_alert: bool
     orp_alert: bool
     ammonia_alert: bool
     water_level_low: bool
     feed_empty_alert: bool
-    
     timestamp: Union[str, datetime] 
 
 class DashboardData(BaseModel):
-    """Combined system data for the main dashboard view"""
-    reading: SensorReadingResponse # Changed from 'current_reading' to 'reading' to match your API
+    reading: SensorReadingResponse 
     alerts: AlertStatus
-    status: str  # "online" or "waiting_for_hardware"
+    status: str
