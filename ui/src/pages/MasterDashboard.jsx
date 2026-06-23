@@ -1,14 +1,11 @@
 import { useSensorData, useThresholds } from '../hooks/useSensorData'
 import { useSensorHistory } from '../hooks/useSensorHistory'
 import SensorCard from '../components/SensorCard'
-import ActuatorStatus from '../components/ActuatorStatus'
 import SensorChart from '../components/SensorChart'
 import '../styles/MasterDashboard.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
-// Manual commands including the specific servo angles for the winch
-// Add the SMS button to your existing commands array
 const MANUAL_COMMANDS = [
   { label: 'Auto Mode', command: 'AUTO_MODE', kind: 'active' },
   { label: 'Manual Mode', command: 'MANUAL_MODE', kind: 'active' },
@@ -21,12 +18,12 @@ const MANUAL_COMMANDS = [
   { label: 'Winch UP (90°)', command: 'WINCH_UP' },
   { label: 'Winch DOWN (0°)', command: 'WINCH_DOWN' },
   { label: 'Dispense Feed', command: 'STEPPER_DISPENSE', kind: 'feed' },
-  { label: 'Send Test SMS', command: 'SEND_SMS', kind: 'active' }, // NEW SMS BUTTON
+  { label: 'Send Test SMS', command: 'SEND_SMS', kind: 'active' },
 ]
 
 function MasterDashboard() {
   const { data, alerts, loading, error } = useSensorData()
-  const historyData = useSensorHistory(40) // Fetch last 40 readings for the charts
+  const historyData = useSensorHistory(40)
   const thresholds = useThresholds()
 
   const sendCommand = async (cmd) => {
@@ -37,7 +34,6 @@ function MasterDashboard() {
     }
   }
 
-  // Handle loading and error states gracefully
   if (loading) return <div className="dashboard"><div className="loading">Loading sensor data...</div></div>
   if (error) return <div className="dashboard"><div className="error">Error: {error}</div></div>
   if (!data || !alerts) return <div className="dashboard"><div className="error">No sensor data available</div></div>
@@ -62,10 +58,10 @@ function MasterDashboard() {
             <button
               key={button.command}
               className={
-                button.kind === 'feed' 
-                  ? 'btn-feed' 
-                  : button.kind === 'active' 
-                    ? (data.auto_mode ? 'btn-active' : 'btn-inactive') 
+                button.kind === 'feed'
+                  ? 'btn-feed'
+                  : button.kind === 'active'
+                    ? (data.auto_mode ? 'btn-active' : 'btn-inactive')
                     : 'btn-inactive'
               }
               onClick={() => sendCommand(button.command)}
@@ -74,71 +70,64 @@ function MasterDashboard() {
             </button>
           ))}
         </div>
-
-       {/* Live Hardware Actuator Status Panel */}
-        <ActuatorStatus status={{ 
-          pump_on: data.pump_on, 
-          uv_on: data.uv_on, 
-          solenoid_on: data.solenoid_on, 
-          is_feeding: data.is_feeding,
-          winch_angle: data.winch_angle,
-          gsm_ok: data.gsm_ok,       // NEW: Pass GSM Status
-          sms_sent: data.sms_sent 
-        }} />
       </div>
 
-      {/* Primary Sensor Reading Grid */}
       <div className="sensors-grid">
-        <SensorCard 
-          title="TDS Level" 
-          value={data.tds} 
-          unit="ppm" 
-          isAlert={alerts.tds_alert} 
-          alertMessage={alerts.tds_alert ? 'TDS high — water change recommended.' : null} 
-          threshold={thresholds ? `${thresholds.MAX_TDS} ppm` : 'N/A'} 
+        <SensorCard
+          title="TDS Level"
+          value={data.tds}
+          unit="ppm"
+          isAlert={alerts.tds_alert}
+          alertMessage={alerts.tds_alert ? 'TDS high — water change recommended.' : null}
+          threshold={thresholds ? `${thresholds.MAX_TDS} ppm` : 'N/A'}
+          actuator={{ label: 'Water Pump', active: data.pump_on }}
         />
-        <SensorCard 
-          title="ORP Level" 
-          value={data.orp} 
-          unit="mV" 
-          isAlert={alerts.orp_alert} 
-          alertMessage={alerts.orp_alert ? 'Low oxygen risk — stagnant water.' : null} 
-          threshold={thresholds ? `Min ${thresholds.MIN_ORP} mV` : 'N/A'} 
+        <SensorCard
+          title="ORP Level"
+          value={data.orp}
+          unit="mV"
+          isAlert={alerts.orp_alert}
+          alertMessage={alerts.orp_alert ? 'Low oxygen risk — stagnant water.' : null}
+          threshold={thresholds ? `Min ${thresholds.MIN_ORP} mV` : 'N/A'}
+          actuator={{ label: 'UV Sterilizer', active: data.uv_on }}
         />
-        <SensorCard 
-          title="Ammonia Gas" 
-          value={data.ammonia} 
-          unit="Raw" 
-          isAlert={alerts.ammonia_alert} 
-          alertMessage={alerts.ammonia_alert ? 'Critical — high toxic waste detected.' : null} 
-          threshold={thresholds ? `${thresholds.AMMONIA_ALERT} Limit` : 'N/A'} 
+        <SensorCard
+          title="Ammonia Gas"
+          value={data.ammonia}
+          unit="Raw"
+          isAlert={alerts.ammonia_alert}
+          alertMessage={alerts.ammonia_alert ? 'Critical — high toxic waste detected.' : null}
+          threshold={thresholds ? `${thresholds.AMMONIA_ALERT} Limit` : 'N/A'}
+          actuator={{ label: 'GSM Signal', active: data.gsm_ok, error: !data.gsm_ok }}
         />
-        <SensorCard 
-          title="Water Distance" 
-          value={data.distance} 
-          unit="cm" 
-          isAlert={alerts.water_level_low} 
-          alertMessage={alerts.water_level_low ? 'Water level out of range.' : null} 
-          threshold={thresholds ? `Alert below ${thresholds.CRITICAL_LOW_WATER} cm` : 'N/A'} 
+        <SensorCard
+          title="Water Distance"
+          value={data.distance}
+          unit="cm"
+          isAlert={alerts.water_level_low}
+          alertMessage={alerts.water_level_low ? 'Water level out of range.' : null}
+          threshold={thresholds ? `Alert below ${thresholds.CRITICAL_LOW_WATER} cm` : 'N/A'}
+          actuator={{ label: 'Solenoid Valve', active: data.solenoid_on }}
         />
-        <SensorCard 
-          title="Scale Weight" 
-          value={data.weight} 
-          unit="g" 
-          isAlert={alerts.feed_empty_alert} 
-          alertMessage={alerts.feed_empty_alert ? 'Feed hopper low — refill soon.' : null} 
-          threshold={thresholds ? `Refill below ${thresholds.FEED_EMPTY_WARNING} g` : 'Real-time measurement'} 
+        <SensorCard
+          title="Scale Weight"
+          value={data.weight}
+          unit="g"
+          isAlert={alerts.feed_empty_alert}
+          alertMessage={alerts.feed_empty_alert ? 'Feed hopper low — refill soon.' : null}
+          threshold={thresholds ? `Refill below ${thresholds.FEED_EMPTY_WARNING} g` : 'Real-time measurement'}
+          actuator={{ label: 'Stepper Motor', active: data.is_feeding }}
         />
-        <SensorCard 
-          title="Hide Status (IR)" 
-          value={data.ir_triggered ? 'Occupied' : 'Clear'} 
-          unit="" 
-          isAlert={false} 
-          threshold={data.ir_triggered ? 'Crayfish detected in hide' : 'Hide is clear'} 
+        <SensorCard
+          title="Hide Status (IR)"
+          value={data.ir_triggered ? 'Occupied' : 'Clear'}
+          unit=""
+          isAlert={false}
+          threshold={data.ir_triggered ? 'Crayfish detected in hide' : 'Hide is clear'}
+          actuator={{ label: 'Winch', active: data.winch_angle === 90, detail: `${data.winch_angle}°` }}
         />
       </div>
 
-      {/* --- LIVE TELEMETRY CHARTS SECTION --- */}
       <h3 style={{ margin: '30px 28px 10px', color: '#707070', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.8em' }}>
         Live Telemetry Trends
       </h3>
@@ -150,7 +139,6 @@ function MasterDashboard() {
         <SensorChart data={historyData} dataKey="weight" title="Hopper Weight" color="#9b59b6" unit="g" />
       </div>
 
-      {/* Critical Active Alerts Footer */}
       <div className="alert-summary">
         <h3>Active Alerts</h3>
         <div className="alerts-list">

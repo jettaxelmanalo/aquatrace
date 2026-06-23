@@ -1,6 +1,6 @@
 import { useSensorData, useThresholds } from '../hooks/useSensorData'
 import SensorCard from '../components/SensorCard'
-import ActuatorStatus from '../components/ActuatorStatus' // Added the status component
+// Added the status component
 import '../styles/MasterDashboard.css' // Ensure the CSS is still linked
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
